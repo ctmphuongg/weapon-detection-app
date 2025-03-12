@@ -1,18 +1,25 @@
 import asyncio
+from dotenv import load_dotenv
 from fastapi import FastAPI, Response, Query
 from fastapi.responses import StreamingResponse
 import cv2
 import threading
+import os
 from typing import AsyncGenerator
 from contextlib import asynccontextmanager
 import uvicorn
 from typing import Optional, Union
+
+load_dotenv()
+rtsp_url = os.getenv("RTSP_URL")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
   """
   Lifespan context manager for startup and shutdown events.
   """
+  global camera
+  camera = Camera(rtsp_url)
   try: 
     yield
   except asyncio.exceptions.CancelledError as error:
@@ -79,8 +86,48 @@ async def gen_frames() -> AsyncGenerator[bytes, None]:
     print("Frame generation cancelled.")
   finally:
     print("Frame generator exited.")
-    
 
-@app.get("/")
-def read_root():
-  return {"Hello": "World"}
+@app.get("/video")
+async def video_feed() -> StreamingResponse:
+  """
+  Video streaming route
+  
+  :return: StreamingResponse with multipart JPEG frames.
+  """
+  return StreamingResponse(
+    gen_frames(),
+    media_type='multipart/x-mixed-replaced; boundary=frame'
+  )
+  
+
+@app.get("/snapshot")
+async def snapshot() -> Response:
+  """
+  Snapshot route to get a single frame
+  
+  :return: Response with JPEG image.
+  """
+  frame = camera.get_frame()
+  if frame:
+    return Response(content=frame, media_type="image/jpeg")
+  else:
+    return Response(status_code=404, content="Camera frame not available.")
+  
+async def main():
+  """
+  Main entry point to run the Uvicorn server.
+  """
+  config = uvicorn.Config(app, host="0.0.0.0", port="8000")
+  server = uvicorn.Server(config)
+  
+  # Run the server
+  await server.serve()
+  
+if __name__ == '__main__':
+  try:
+    asyncio.run(main())
+  except KeyboardInterrupt:
+    print("Server stopped by user.")
+    
+  
+    
