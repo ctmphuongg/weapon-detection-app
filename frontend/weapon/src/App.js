@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 function App() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
-  const API_URL = 'http://localhost:8000'; // Change this to match your server address
+  const API_URL = 'http://localhost:8000';
 
   useEffect(() => {
     // Keep-alive function to maintain the stream
