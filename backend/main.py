@@ -15,12 +15,10 @@ import subprocess
 import numpy as np
 import os
 from ultralytics import YOLO
-
 from yolo_process import process_frame_with_yolo
 from stream_manager import StreamManager
 
 # To think about: How to avoid 3s delay at the beginning when restart client
-
 HTTP_PORT = 6064
 lock = threading.Lock()
 app = FastAPI()
@@ -71,7 +69,6 @@ async def video_feed():
         media_type="multipart/x-mixed-replace;boundary=frame"
     )
 
-
 @app.get("/keep-alive")
 async def keep_alive(background_tasks: BackgroundTasks):
     stream_manager.keep_alive_counter = 100
@@ -82,6 +79,11 @@ async def keep_alive(background_tasks: BackgroundTasks):
 @app.get("/model-info")
 def model_info():
     return {"classes": model.names}
+
+# New endpoint to get latest detections
+@app.get("/latest-detections")
+async def latest_detections():
+    return {"detections": stream_manager.latest_detections}
 
 # Shutdown hook
 @app.on_event("shutdown")

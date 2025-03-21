@@ -13,6 +13,7 @@ class StreamManager:
         self.frame_queue = asyncio.Queue(maxsize=1000)
         self.keep_alive_counter = 0
         self.stream_task = None
+        self.latest_detections = []
         
     async def start_stream(self):
         if not self.active:
@@ -38,15 +39,19 @@ class StreamManager:
                 frame = imutils.resize(frame, width=680)
                 
                 # Process with YOLO in thread pool executor
-                processed_frame = await loop.run_in_executor(
+                processed_frame, detections = await loop.run_in_executor(
                     None, 
-                    lambda f: process_frame_with_yolo(f, self.model), 
+                    lambda f: process_frame_with_yolo(f, self.model, return_detections=True), 
                     frame.copy()
                 )
                 
                 if processed_frame is None:
                     await asyncio.sleep(0.1)
                     continue
+                
+                # Update latest detections if any were found
+                if detections:
+                    self.latest_detections = detections
                 
                 # Encode frame in thread pool executor
                 encode_result = await loop.run_in_executor(
