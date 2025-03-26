@@ -3,6 +3,7 @@ import cv2
 import imutils
 from imutils.video import VideoStream
 from yolo_process import process_frame_with_yolo
+import time
 
 # Shared state management
 class StreamManager:
@@ -14,6 +15,10 @@ class StreamManager:
         self.keep_alive_counter = 0
         self.stream_task = None
         self.latest_detections = []
+        self.last_detection_time = None
+        self.detection_timeout = 2.0  # Seconds to wait before considering a detection as disappeared
+        self.detection_history = []  # List to store detection history
+        self.history_timeout = 3600  # 1 hour in seconds
         
     async def start_stream(self):
         if not self.active:
@@ -49,9 +54,31 @@ class StreamManager:
                     await asyncio.sleep(0.1)
                     continue
                 
+                current_time = time.time()
+                
                 # Update latest detections if any were found
                 if detections:
                     self.latest_detections = detections
+                    self.last_detection_time = current_time
+                    
+                    # Add to history if these are new detections
+                    if not self.detection_history or (current_time - self.detection_history[-1]['time']) > self.detection_timeout:
+                        self.detection_history.append({
+                            'time': current_time,
+                            'count': len(detections),
+                            'detections': detections
+                        })
+                else:
+                    # Check if detections have disappeared for too long
+                    if self.last_detection_time and (current_time - self.last_detection_time) > self.detection_timeout:
+                        self.latest_detections = []
+                        self.last_detection_time = None
+                
+                # Clean up old history entries
+                self.detection_history = [
+                    entry for entry in self.detection_history 
+                    if current_time - entry['time'] <= self.history_timeout
+                ]
                 
                 # Encode frame in thread pool executor
                 encode_result = await loop.run_in_executor(

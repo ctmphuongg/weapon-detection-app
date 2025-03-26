@@ -26,7 +26,7 @@ width = 1280
 height = 720
 load_dotenv()
 url_rtsp = os.getenv("RTSP_URL")
-model = YOLO("yolo11n.pt")
+model = YOLO("best.pt")
 
 # Single shared stream manager instance
 stream_manager = StreamManager(url_rtsp, model)
