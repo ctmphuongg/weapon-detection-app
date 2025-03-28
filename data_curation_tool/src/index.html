@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Data Curation UI</title>
+  <!-- Link to external CSS file -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1>Data Curation: Video to Image Processor</h1>
+
+  <!-- 1) Mode Selection -->
+  <div>
+    <label for="modeSelect">Select Mode:</label>
+    <select id="modeSelect">
+      <option value="videoShots" selected>Process Videos (videoShots)</option>
+      <option value="filterImages">Filter Images (filterImages)</option>
+    </select>
+  </div>
+  <br>
+
+  <!-- 2) Toggle Bounding Boxes -->
+  <div>
+    <label for="drawBoxesCheck">Draw Bounding Boxes?</label>
+    <input type="checkbox" id="drawBoxesCheck" checked />
+  </div>
+  <br>
+
+  <!-- 3) Input Folder -->
+  <div>
+    <label for="inputFolder">Input Folder:</label>
+    <input type="text" id="inputFolder" readonly />
+    <button id="pickInputBtn">Pick Input Folder</button>
+  </div>
+  <br>
+
+  <!-- 4) Output Folder (only needed for "videoShots") -->
+  <div id="outputFolderGroup">
+    <label for="outputFolder">Output Folder:</label>
+    <input type="text" id="outputFolder" readonly />
+    <button id="pickOutputBtn">Pick Output Folder</button>
+  </div>
+  <br>
+
+  <!-- 5) Classes -->
+  <div>
+    <label for="classesInput">Classes (comma-separated):</label>
+    <input type="text" id="classesInput" value="pistol, gun" />
+  </div>
+  <br>
+
+  <!-- 6) Frame Interval -->
+  <div>
+    <label for="frameInterval">Frame Interval:</label>
+    <input type="number" id="frameInterval" value="10" min="1" />
+  </div>
+  <br>
+
+  <!-- 7) Run Script Button -->
+<div style="display: flex; gap: 10px;">
+    <button id="runBtn">Run Script</button>
+    <button id="cancelBtn">Cancel Script</button>
+</div>
+<br>
+
+  <!-- Status Output -->
+  <pre id="status"></pre>
+
+  <script>
+    const modeSelect = document.getElementById('modeSelect');
+    const drawBoxesCheck = document.getElementById('drawBoxesCheck');
+    const inputFolderEl = document.getElementById('inputFolder');
+    const outputFolderEl = document.getElementById('outputFolder');
+    const pickInputBtn = document.getElementById('pickInputBtn');
+    const pickOutputBtn = document.getElementById('pickOutputBtn');
+    const classesInput = document.getElementById('classesInput');
+    const frameIntervalEl = document.getElementById('frameInterval');
+    const runBtn = document.getElementById('runBtn');
+    const statusEl = document.getElementById('status');
+    const outputFolderGroup = document.getElementById('outputFolderGroup');
+
+    // We'll store the full paths separately (for Python), and only display the folder name in the UI.
+    let inputFolderFullPath = '';
+    let outputFolderFullPath = '';
+
+    // Show/hide output folder group based on mode
+    function updateVisibility() {
+      if (modeSelect.value === 'videoShots') {
+        outputFolderGroup.style.display = 'block';
+      } else {
+        outputFolderGroup.style.display = 'none';
+      }
+    }
+    modeSelect.addEventListener('change', updateVisibility);
+    updateVisibility();
+
+    // Helper: Get just the folder name from a full path
+    function getFolderName(fullPath) {
+      // Split on forward slash or backslash
+      const parts = fullPath.split(/[/\\]/);
+      return parts[parts.length - 1] || fullPath;
+    }
+
+    // 1) Pick Input Folder
+    pickInputBtn.addEventListener('click', async () => {
+      const folder = await window.electronAPI.selectFolder();
+      if (folder) {
+        inputFolderFullPath = folder;
+        // Only display the final directory name
+        inputFolderEl.value = getFolderName(folder);
+      }
+    });
+
+    // 2) Pick Output Folder
+    pickOutputBtn.addEventListener('click', async () => {
+      const folder = await window.electronAPI.selectFolder();
+      if (folder) {
+        outputFolderFullPath = folder;
+        outputFolderEl.value = getFolderName(folder);
+      }
+    });
+
+    // 3) Run Python Script
+    runBtn.addEventListener('click', async () => {
+      statusEl.textContent = '';
+
+      // Gather parameters
+      const mode = modeSelect.value;            
+      const drawBoxes = drawBoxesCheck.checked; 
+      const classStr = classesInput.value;      
+      const frameInterval = parseInt(frameIntervalEl.value, 10) || 10;
+
+      // Validate input folder
+      if (!inputFolderFullPath) {
+        statusEl.textContent = 'Please pick an input folder first.';
+        return;
+      }
+      // Validate output folder if needed
+      if (mode === 'videoShots' && !outputFolderFullPath) {
+        statusEl.textContent = 'Please pick an output folder for videoShots mode.';
+        return;
+      }
+
+      // Convert comma-separated classes into array
+      let classes = classStr.split(',').map(c => c.trim()).filter(Boolean);
+      if (classes.length === 0) {
+        classes = ['pistol', 'gun'];
+      }
+
+      // Show a "running..." status
+      statusEl.textContent = 'Running Python script...';
+
+      try {
+        // Pass the *full* paths to Python
+        const result = await window.electronAPI.runPythonScript({
+          mode,
+          drawBoxes,
+          inputFolder: inputFolderFullPath,
+          outputFolder: outputFolderFullPath,
+          classes,
+          frameInterval
+        });
+
+        // Show success
+        statusEl.textContent = 'Success:\n' + result;
+      } catch (error) {
+        // Show error
+        statusEl.textContent = 'Error:\n' + error.message;
+      }
+    });
+
+    const cancelBtn = document.getElementById('cancelBtn');
+    cancelBtn.addEventListener('click', async () => {
+        const result = await window.electronAPI.cancelPythonScript();
+        console.log('Cancel result:', result);
+        // Show user feedback, etc.
+    });
+  </script>
+</body>
+</html>
