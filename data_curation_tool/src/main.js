@@ -62,14 +62,14 @@ ipcMain.handle('run-python', (event, {
   inputFolder,    // folder for videos/images
   outputFolder,   // used if mode=videoShots
   classes,        // array of classes, e.g. ["pistol", "gun"]
-  frameInterval   // integer
+  frameInterval,  // integer
+  confidenceLevel // float
 }) => {
   return new Promise((resolve, reject) => {
     // Convert boolean drawBoxes to string ("True"/"False")
     const drawArg = drawBoxes ? "True" : "False";
 
     // Build the arguments array for your script:
-    //   python videoToImage.py <mode> <draw_boxes> <input_folder> <output_folder> <class1> [class2...] <frame_interval>
     const pythonArgs = [
       path.join(__dirname, 'videoToImage.py'),
       mode,
@@ -78,6 +78,7 @@ ipcMain.handle('run-python', (event, {
       outputFolder || '',
       ...classes,
       String(frameInterval || 10),
+      String(confidenceLevel || 0.55) // Add confidence level
     ];
 
     console.log('Spawning Python with args:', pythonArgs);
@@ -104,7 +105,12 @@ ipcMain.handle('run-python', (event, {
       currentPyProcess = null;
 
       console.log('=== Python stderr ===\n', stderrData);
-      if (code === 0) {
+
+      // Handle cases where the process was terminated without an exit code
+      if (code === null) {
+        console.log('Python process was terminated by the user.');
+        resolve('Python process was terminated by the user.');
+      } else if (code === 0) {
         resolve(stdoutData.trim() || 'Python script finished successfully.');
       } else {
         reject(new Error(stderrData || `Script exited with code: ${code}`));
@@ -117,10 +123,16 @@ ipcMain.handle('run-python', (event, {
 ipcMain.handle('cancel-python', async () => {
   if (currentPyProcess) {
     console.log('Cancelling Python process...');
-    // On Windows, SIGTERM may not always work; you could use 'SIGKILL'
-    currentPyProcess.kill('SIGTERM');
-    currentPyProcess = null;
-    return 'Python process cancelled.';
+    try {
+      // Attempt to kill the process
+      currentPyProcess.kill('SIGTERM');
+      currentPyProcess = null;
+      return 'Python process cancelled.';
+    } catch (error) {
+      console.error('Error while cancelling Python process:', error.message);
+      currentPyProcess = null; // Clear the reference even if an error occurs
+      return `Failed to cancel Python process: ${error.message}`;
+    }
   } else {
     return 'No Python process running.';
   }

@@ -147,7 +147,7 @@ def process_videos_in_folder(videos_folder, output_folder, valid_classes=None,
 
     # Gather top-level items
     all_items = os.listdir(videos_folder)
-    print("DEBUG: Found these top-level items in folder:", all_items)
+    #print("DEBUG: Found these top-level items in folder:", all_items)
 
     video_files = []
     for item in all_items:
@@ -163,7 +163,7 @@ def process_videos_in_folder(videos_folder, output_folder, valid_classes=None,
         print(f"No video files found in '{videos_folder}'.")
         return
 
-    print("DEBUG: Final list of recognized video files:", video_files)
+    #print("DEBUG: Final list of recognized video files:", video_files)
 
     for video_file in video_files:
         process_video(video_file, output_folder, valid_classes, frame_interval, draw_boxes)
@@ -230,19 +230,19 @@ def remove_duplicate_images(folder):
 if __name__ == '__main__':
     """
     Usage:
-      python videoToImage.py <mode> <draw_boxes> <input_folder> <output_folder> <class1> [class2 ...] <frame_interval>
+      python videoToImage.py <mode> <draw_boxes> <input_folder> <output_folder> <class1> [class2 ...] <frame_interval> <confidence_level>
     
       Examples:
       1) Process videos with bounding boxes, searching for "pistol" or "gun":
-         python videoToImage.py videoShots True /path/to/videos /path/to/output pistol gun 10
+         python videoToImage.py videoShots True /path/to/videos /path/to/output pistol gun 10 0.55
       
       2) Filter images in a folder (no bounding boxes, just deletion):
-         python videoToImage.py filterImages False /path/to/images /unused pistol 10
+         python videoToImage.py filterImages False /path/to/images /unused pistol 10 0.55
          # In this example, output_folder is not used, so pass anything ("/unused").
     """
 
-    if len(sys.argv) < 5:
-        print("Usage: videoToImage.py <mode> <draw_boxes> <input_folder> <output_folder> <class1> [class2 ...] <frame_interval>")
+    if len(sys.argv) < 6:
+        print("Usage: videoToImage.py <mode> <draw_boxes> <input_folder> <output_folder> <class1> [class2 ...] <frame_interval> <confidence_level>")
         sys.exit(1)
 
     mode = sys.argv[1]         # "videoShots" or "filterImages"
@@ -250,14 +250,16 @@ if __name__ == '__main__':
     input_folder = sys.argv[3]
     output_folder = sys.argv[4]
 
-    # Everything from sys.argv[5:-1] are class names
-    classes = sys.argv[5:-1]
+    # Everything from sys.argv[5:-2] are class names
+    classes = sys.argv[5:-2]
 
-    # Final arg is frame_interval
+    # Final args are frame_interval and confidence_level
     try:
-        frame_interval = int(sys.argv[-1])
+        frame_interval = int(sys.argv[-2])
+        confidence_level = float(sys.argv[-1])
     except ValueError:
         frame_interval = 10
+        confidence_level = 0.55
 
     # Convert bounding-box arg to boolean
     if draw_boxes_arg in ["true", "1", "yes"]:
@@ -274,12 +276,15 @@ if __name__ == '__main__':
     print(f"Mode: {mode}")
     print(f"Draw boxes: {draw_boxes}")
     print(f"Input folder: {input_folder}")
-    print(f"Output folder: {output_folder}")
+    if mode == "videoShots":
+        print(f"Output folder: {output_folder}")
+    else:
+        print("Output folder: Not applicable for filterImages mode")
     print(f"Classes: {valid_classes}")
     print(f"Frame interval: {frame_interval}")
+    print(f"Confidence level: {confidence_level}")
 
     if mode == "videoShots":
-        # Process videos => output frames that contain valid detections.
         process_videos_in_folder(
             input_folder,
             output_folder,
@@ -290,12 +295,10 @@ if __name__ == '__main__':
         print("Finished processing videos into screenshots.")
 
     elif mode == "filterImages":
-        # Filter existing images in the input folder (output folder is irrelevant here).
-        print(f"Filtering images in: {input_folder}")
         filter_images(
             folder=input_folder,
             valid_classes=valid_classes,
-            conf_threshold=0.55
+            conf_threshold=confidence_level
         )
         print("Finished filtering images.")
 
