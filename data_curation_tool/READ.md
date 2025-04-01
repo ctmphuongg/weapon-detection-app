@@ -1,5 +1,4 @@
 # Video-to-Image Electron App
-### By the Sentinel Team
 
 A simple Electron-based UI for processing videos or images with a Python script (`videoToImage.py`). Users can:
 
@@ -10,30 +9,15 @@ A simple Electron-based UI for processing videos or images with a Python script 
 
 ---
 
-## Features
+## Prerequisites
 
-1. **Two Modes**  
-   - **Process Videos (videoShots)**: Pulls frames from videos where a valid detection is found.  
-   - **Filter Images (filterImages)**: Removes images with no valid detection.
+Before you continue, ensure you have met the following requirements:
 
-2. **Custom Classes**  
-   - Specify which YOLO-detected classes you care about (e.g., `pistol`, `gun`).
-
-3. **Bounding Boxes**  
-   - Optionally draw bounding boxes on extracted frames.
-
-4. **Cancel Running Process**  
-   - If the script is taking too long or was selected by mistake, cancel it via a dedicated button.
-
----
-
-## Requirements
-
-1. **Node.js** (v14 or newer)
-2. **npm** or **yarn**
-3. **Electron** (installed as a `devDependency` in this repo)
-4. **Python** (3.8+ recommended)
-5. **Python libraries**:
+- **Node.js** (v14 or newer)
+- **npm** or **yarn**
+- **Electron** (installed as a `devDependency` in this repo)
+- **Python** (3.8+ recommended)
+- **Python libraries**:
    - `ultralytics`
    - `torch`
    - `opencv-python`
@@ -43,29 +27,76 @@ A simple Electron-based UI for processing videos or images with a Python script 
 
 ## Installation
 
-1. **Clone** or download this repository.
+1. Clone or download this repository.
 2. In the project folder, run:
-   ```bash 
-   npm install 
+    ```bash
+    npm install
+    ```
 
-## Start 
+---
 
-1. Start the electron app with
-    ```bash 
+## Usage
+
+1. Start the Electron app with:
+    ```bash
     npm start
+    ```
+
+2. Choose one of the two modes:
+    - **Process Videos (videoShots)**: Extract frames from videos where a valid detection is found.
+    - **Filter Images (filterImages)**: Remove images with no valid detection.
+
+3. Optionally, specify custom YOLO-detected classes and confidence thresholds.
+
+4. Toggle bounding boxes if needed.
+
+5. Cancel a running process if required.
+
+---
+
+## Features
+
+1. **Two Modes**  
+    - **Process Videos**: Extract frames from videos based on object detection.  
+    - **Filter Images**: Remove images without valid detections.
+
+2. **Custom Classes**  
+    - Specify YOLO-detected classes (e.g., `pistol`, `gun`).
+    - Set a confidence threshold (e.g., `0.5` for 50% confidence).
+
+3. **Bounding Boxes**  
+    - Optionally draw bounding boxes on extracted frames.
+
+4. **Cancel Running Process**  
+    - Cancel a script if it takes too long or was selected by mistake.
+
+---
 
 ## Folder Structure
 
-    my-electron-app/
-    ├── main.js
-    ├── preload.js
-    ├── index.html
-    ├── videoToImage.py
-    ├── package.json
-    └── (optional) styles.css
-main.js: Electron main process. Spawns Python.
-preload.js: Bridges the main process and renderer.
-index.html: Your UI (renderer).
-videoToImage.py: Python script for video or image processing.
+```
+my-electron-app/
+├── main.js          # Electron main process. Spawns Python.
+├── preload.js       # Bridges the main process and renderer.
+├── index.html       # Your UI (renderer).
+├── videoToImage.py  # Python script for video or image processing.
+├── package.json     # Project metadata and dependencies.
+└── (optional) styles.css
+```
+
+---
+
+## Contributors
+
+- **Sentinel Team**: Development and maintenance.
+
+---
+
+## License
 
 
+---
+
+## Contact
+
+For questions or collaboration, reach out to the Sentinel Team.
