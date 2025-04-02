@@ -17,6 +17,7 @@ import os
 from ultralytics import YOLO
 from yolo_process import process_frame_with_yolo
 from stream_manager import StreamManager
+from save_image import process_rtsp_frame
 
 # To think about: How to avoid 3s delay at the beginning when restart client
 HTTP_PORT = 6064
@@ -84,6 +85,21 @@ def model_info():
 @app.get("/latest-detections")
 async def latest_detections():
     return {"detections": stream_manager.latest_detections}
+
+# New endpoint to process images at intervals and save them
+@app.get("/process-image")
+async def process_image(interval: int = 10):
+    """
+    Process an image from the RTSP stream, run YOLO detection, save the image,
+    and return the detection results.
+    
+    Args:
+        interval: Interval in seconds between captures (default: 10)
+        
+    Returns:
+        Dictionary with detection results and image path
+    """
+    return await process_rtsp_frame(url_rtsp, model, interval)
 
 # Shutdown hook
 @app.on_event("shutdown")

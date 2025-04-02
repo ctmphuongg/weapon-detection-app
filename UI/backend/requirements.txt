@@ -6,3 +6,4 @@ opencv_python==4.10.0.84
 python-dotenv==1.1.0
 ultralytics==8.3.27
 uvicorn==0.34.0
+boto3==1.34.69
