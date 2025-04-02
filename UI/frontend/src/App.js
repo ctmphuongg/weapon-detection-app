@@ -36,10 +36,24 @@ function App() {
       }
     ];
     
+    const currentTime = new Date();
     setDangerousDetections(mockDetections);
-    setLastDetectionTime(new Date());
+    setLastDetectionTime(currentTime);
+    
+    // Update detection log
+    setDetectionLog(prev => {
+      const newLog = [
+        ...mockDetections.map(detection => ({
+          ...detection,
+          timestamp: currentTime
+        })),
+        ...prev
+      ].slice(0, 50); // Keep last 50 detections
+      return newLog;
+    });
+
     setStats(prev => ({
-      highestThreatLevel: Math.max(prev.highestThreatLevel, 0.95),
+      highestThreatLevel: Math.max(prev.highestThreatLevel, 0.95 * 100),
       lastHourDetections: prev.lastHourDetections + mockDetections.length,
     }));
   };
