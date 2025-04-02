@@ -58,3 +58,6 @@ docker-compose.override.yml
 # Database
 *.sqlite3
 *.db
+
+draft.txt
+sentinel.pem
