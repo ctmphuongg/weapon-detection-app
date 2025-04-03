@@ -4,6 +4,12 @@ import imutils
 from imutils.video import VideoStream
 from yolo_process import process_frame_with_yolo
 import time
+from notification_manager import NotificationManager
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Shared state management
 class StreamManager:
@@ -20,6 +26,10 @@ class StreamManager:
         self.detection_history = []  # List to store detection history
         self.history_timeout = 3600  # 1 hour in seconds
         
+        # Initialize notification manager
+        api_endpoint = os.getenv("NOTIFICATION_API_ENDPOINT", "http://localhost:8000/api/notifications")
+        self.notification_manager = NotificationManager(api_endpoint)
+    
     async def start_stream(self):
         if not self.active:
             self.active = True
@@ -68,6 +78,9 @@ class StreamManager:
                             'count': len(detections),
                             'detections': detections
                         })
+                    
+                    # Process detections for notification
+                    await self.notification_manager.process_detection(frame, detections)
                 else:
                     # Check if detections have disappeared for too long
                     if self.last_detection_time and (current_time - self.last_detection_time) > self.detection_timeout:
