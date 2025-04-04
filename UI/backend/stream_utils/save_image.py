@@ -8,6 +8,11 @@ from typing import List, Dict, Any, Optional, Tuple, Union
 import boto3
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
+import logging
+from .stream_manager import StreamManager
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -77,7 +82,7 @@ def save_image_s3(image: np.ndarray, filename: str) -> str:
         
         return s3_url
     except ClientError as e:
-        print(f"Error uploading to S3: {e}")
+        logger.error(f"Error uploading to S3: {e}")
         # If S3 upload fails, fall back to local save
         return save_image_local(image, filename)
 
@@ -158,7 +163,7 @@ def get_detections(frame: np.ndarray, model: Any) -> Tuple[np.ndarray, List[Dict
     
     return frame, detection_list
 
-async def process_rtsp_frame(url_rtsp: str, model: Any, interval: int = 10) -> Dict[str, Any]:
+async def process_rtsp_frame(url_rtsp: str, model: Any, interval: int = 10, stream_manager: Optional[StreamManager] = None) -> Dict[str, Any]:
     """
     Process a frame from RTSP URL at specified intervals
     
@@ -166,56 +171,121 @@ async def process_rtsp_frame(url_rtsp: str, model: Any, interval: int = 10) -> D
         url_rtsp: The RTSP URL
         model: The YOLO model
         interval: Interval in seconds between captures
+        stream_manager: Optional StreamManager instance to get the latest processed frame
         
     Returns:
         Dictionary with detection results and image path
     """
-    # Initialize video capture
-    cap = cv2.VideoCapture(url_rtsp)
-    
-    if not cap.isOpened():
-        return {
-            "error": "Failed to open RTSP stream",
-            "timestamp": datetime.now().isoformat()
-        }
-    
     try:
-        # Read a frame
-        ret, frame = cap.read()
+        # If stream_manager is provided, use its latest processed frame
+        if stream_manager is not None:
+            frame, detections = await stream_manager.get_latest_processed_frame()
+            if frame is None:
+                logger.error("No processed frame available from stream manager")
+                return {
+                    "error": "No processed frame available",
+                    "timestamp": datetime.now().isoformat()
+                }
+            
+            # Save the annotated image
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"detection_{timestamp}.jpg"
+            image_path = save_image(frame, filename)
+            
+            # Format detections for API response
+            formatted_detections = []
+            for detection in detections:
+                formatted_detections.append({
+                    "confidence": detection["confidence"],
+                    "classification": detection["class_name"]
+                })
+            
+            # Prepare API response
+            response = {
+                "picture": image_path,
+                "detection_event": formatted_detections,
+                "location_id": 1,  # Default as specified
+                "camera_id": 1,    # Same as location_id as specified
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            return response
         
-        if not ret:
+        # Fallback to direct RTSP capture if no stream_manager is provided
+        # Initialize video capture with a timeout
+        cap = cv2.VideoCapture(url_rtsp)
+        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)  # 5 second timeout
+        
+        if not cap.isOpened():
+            logger.error("Failed to open RTSP stream")
             return {
-                "error": "Failed to read frame from RTSP stream",
+                "error": "Failed to open RTSP stream",
                 "timestamp": datetime.now().isoformat()
             }
         
-        # Process frame with YOLO
-        annotated_frame, detections = get_detections(frame, model)
+        try:
+            # Try to read a frame with a timeout
+            start_time = time.time()
+            ret = False
+            frame = None
+            
+            while time.time() - start_time < 5.0:  # 5 second timeout
+                ret, frame = cap.read()
+                if ret and frame is not None:
+                    break
+                await asyncio.sleep(0.1)  # Small sleep to yield control
+            
+            if not ret or frame is None:
+                logger.error("Failed to read frame from RTSP stream")
+                return {
+                    "error": "Failed to read frame from RTSP stream",
+                    "timestamp": datetime.now().isoformat()
+                }
+            
+            # Process frame with YOLO
+            annotated_frame, detections = get_detections(frame, model)
+            
+            if annotated_frame is None:
+                logger.error("Failed to process frame with YOLO")
+                return {
+                    "error": "Failed to process frame with YOLO",
+                    "timestamp": datetime.now().isoformat()
+                }
+            
+            # Save the annotated image
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"detection_{timestamp}.jpg"
+            image_path = save_image(annotated_frame, filename)
+            
+            # Format detections for API response
+            formatted_detections = []
+            for detection in detections:
+                formatted_detections.append({
+                    "confidence": detection["confidence"],
+                    "classification": detection["class_name"]
+                })
+            
+            # Prepare API response
+            response = {
+                "picture": image_path,
+                "detection_event": formatted_detections,
+                "location_id": 1,  # Default as specified
+                "camera_id": 1,    # Same as location_id as specified
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            return response
         
-        # Save the annotated image
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"detection_{timestamp}.jpg"
-        image_path = save_image(annotated_frame, filename)
-        
-        # Format detections for API response
-        formatted_detections = []
-        for detection in detections:
-            formatted_detections.append({
-                "confidence": detection["confidence"],
-                "classification": detection["class_name"]
-            })
-        
-        # Prepare API response
-        response = {
-            "picture": image_path,
-            "detection_event": formatted_detections,
-            "location_id": 1,  # Default as specified
-            "camera_id": 1,    # Same as location_id as specified
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        return response
+        finally:
+            # Always release the capture
+            try:
+                cap.release()
+            except Exception as e:
+                logger.error(f"Error releasing video capture: {str(e)}")
     
-    finally:
-        # Release resources
-        cap.release() 
+    except Exception as e:
+        logger.error(f"Error processing RTSP frame: {str(e)}")
+        return {
+            "error": f"Error processing frame: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        } 
