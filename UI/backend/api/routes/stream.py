@@ -21,16 +21,16 @@ async def process_image(interval: int = 10):
     """
     return await process_rtsp_frame(RTSP_URL, model, interval, stream_manager)
 
-@router.get("/stream-status")
-async def get_stream_status():
-    """
-    Get the current status of the RTSP stream.
+# @router.get("/stream-status")
+# async def get_stream_status():
+#     """
+#     Get the current status of the RTSP stream.
     
-    Returns:
-        Dictionary with stream status information
-    """
-    return {
-        "is_running": stream_manager.is_running,
-        "last_frame_time": stream_manager.last_frame_time,
-        "frame_count": stream_manager.frame_count
-    } 
+#     Returns:
+#         Dictionary with stream status information
+#     """
+#     return {
+#         "is_running": stream_manager.is_running,
+#         "last_frame_time": stream_manager.last_frame_time,
+#         "frame_count": stream_manager.frame_count
+#     } 

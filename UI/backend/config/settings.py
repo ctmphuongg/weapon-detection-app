@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # RTSP Configuration
-RTSP_URL = os.getenv("RTSP_URL", "rtsp://admin:admin@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0")
+RTSP_URL = os.getenv("RTSP_URL", "rtsp://admin:HdJUwQ1E!@172.20.30.21:554/3/profile8/media.smp")
 
 # API Configuration
 API_HOST = "0.0.0.0"
