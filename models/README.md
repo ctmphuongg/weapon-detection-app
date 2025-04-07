@@ -5,7 +5,7 @@ This folder contains the trained AI models used in the Threat Detection System:
 
 - Weapon Detection Model
     
-    Currently detects five object classes: guns, rifles, knives, wallets, and camera lenses.
+    Currently detects five object classes: guns, knives, phones, wallets, and camera lenses.
 
 - Police Identification Model
         
