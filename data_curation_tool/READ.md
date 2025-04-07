@@ -1,4 +1,4 @@
-# Video-to-Image Electron App
+# Data Curation App
 
 A simple Electron-based UI for processing videos or images with a Python script (`videoToImage.py`). Users can:
 
