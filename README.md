@@ -6,7 +6,7 @@ With school shootings on the rise, our client Critical Reach, a Silicon Valley n
 
 To get the project up and running on your local machine for development and testing purposes as well as how to deploy the project on a live system, please view the following documents for further instructions:
 
- - Threat Detection Model: **Sam's ReadMe link here**
+ - Threat Detection Model: https://gitlab.bucknell.edu/kbw011/senior-design-aiecode/-/blob/8bf97f0e91e571d9e5efc52b806fcb94f6c0673c/models/README.md
  - UI: https://gitlab.bucknell.edu/kbw011/senior-design-aiecode/-/blob/main/UI/README.md?ref_type=heads
  - Data Curation Tool: https://gitlab.bucknell.edu/kbw011/senior-design-aiecode/-/blob/main/data_curation_tool/READ.md?ref_type=heads
 
