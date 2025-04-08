@@ -42,7 +42,7 @@ class StreamManager:
         self.frame_lock = asyncio.Lock()
         
         # Initialize notification manager
-        api_endpoint = os.getenv("NOTIFICATION_API_ENDPOINT", "http://localhost:8000/api/notifications")
+        api_endpoint = os.getenv("NOTIFICATION_API_ENDPOINT", "https://learnsecure-api.d.vaultinnovation.com/api/v1/public/threats")
         self.notification_manager = NotificationManager(api_endpoint)
     
     async def get_latest_processed_frame(self) -> Tuple[np.ndarray, List[Dict[str, Any]]]:

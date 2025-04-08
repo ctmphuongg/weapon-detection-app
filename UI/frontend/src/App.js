@@ -62,7 +62,7 @@ function App() {
     // Keep-alive function to maintain the stream
     const keepAlive = async () => {
       try {
-        const response = await fetch(`${API_URL}/keep-alive`);
+        const response = await fetch(`${API_URL}/video/keep-alive`);
         if (response.ok) {
           setConnectionError(false);
           setIsStreaming(true);
@@ -133,7 +133,7 @@ function App() {
           console.error('Failed to fetch detections:', error);
         }
       }
-    }, 1000); // Poll every second
+    }, 5000); // Poll every second
 
     // Clean up on component unmount
     return () => {
@@ -174,7 +174,7 @@ function App() {
               </div>
               <button 
                 onClick={() => {
-                  fetch(`${API_URL}/keep-alive`);
+                  fetch(`${API_URL}/video/keep-alive`);
                   setIsStreaming(true);
                 }}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -210,7 +210,7 @@ function App() {
               <div className="relative bg-black aspect-video">
                 {isStreaming ? (
                   <img 
-                    src={`${API_URL}/`} 
+                    src={`${API_URL}/video/`} 
                     alt="Camera Stream" 
                     className="w-full h-full object-contain"
                     onError={() => {

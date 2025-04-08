@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
-
+from config.settings import TOKEN
 class NotificationManager:
     def __init__(self, api_endpoint: str):
         """
@@ -161,7 +161,9 @@ class NotificationManager:
         Returns:
             True if notification was sent successfully, False otherwise
         """
+        # print("API", self.api_endpoint, TOKEN)
         if self.best_image is None:
+            print("No best image set")
             return False
         
         try:
@@ -169,27 +171,43 @@ class NotificationManager:
             _, buffer = cv2.imencode('.jpg', self.best_image)
             image_bytes = buffer.tobytes()
             
-            # Convert to base64 for JSON serialization
-            image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-            
-            # Prepare the payload
-            payload = {
-                "picture": image_base64,
-                "detection_event": [
-                    {
-                        "confidence": d["confidence"],
-                        "classification": d["class_name"]
-                    } for d in self.best_detections
-                ],
-                "location_id": 1,  # Default as specified
-                "camera_id": 1,    # Same as location_id as specified
-                "timestamp": datetime.now().isoformat()
+            # Prepare the headers
+            headers = {
+                'Accept': 'application/json',
+                'Authorization': 'Bearer '+ TOKEN
             }
+
+            # Prepare the form data
+            form_data = aiohttp.FormData()
+            
+            # Add the image as a file
+            form_data.add_field('photo', 
+                            image_bytes, 
+                            filename='detection_image.jpg',
+                            content_type='image/jpeg')
+            
+            # Add other parameters as in the example
+            form_data.add_field('locationId', '1')
+            form_data.add_field('cameraId', '1')
+            form_data.add_field('timestamp', datetime.now().isoformat() + 'Z')
+            
+            # Add detection events
+            if self.best_detections:
+                for i, detection in enumerate(self.best_detections):
+                    form_data.add_field(f'detectionEvent[{i}][confidence]', str(detection["confidence"]))
+                    form_data.add_field(f'detectionEvent[{i}][classification]', detection["class_name"])
+        
+            # TODO: Test send notification - delete when done
+            else: 
+                form_data.add_field(f'detectionEvent[0][confidence]', '0.5')
+                form_data.add_field(f'detectionEvent[0][classification]', 'knife')
             
             # Send the notification
             async with aiohttp.ClientSession() as session:
-                async with session.post(self.api_endpoint, json=payload) as response:
-                    if response.status == 200:
+                async with session.post(self.api_endpoint, data=form_data, headers=headers) as response:
+                    print(response.text)
+                    
+                    if response.status == 201:
                         # Update state after successful notification
                         self.last_notification_time = time.time()
                         self.last_detection_category = self.best_detections[0]["class_name"] if self.best_detections else None
@@ -206,4 +224,5 @@ class NotificationManager:
                         return False
         except Exception as e:
             print(f"Error sending notification: {e}")
-            return False 
+            traceback.print_exc()  # Add this to print full exception details
+            return False

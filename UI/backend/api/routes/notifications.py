@@ -62,58 +62,49 @@ async def get_notification_config():
         "best_image_window": stream_manager.notification_manager.best_image_window,
         "api_endpoint": stream_manager.notification_manager.api_endpoint
     }
-
-@router.post("/trigger")
-async def trigger_notification(payload: NotificationPayload):
-    """
-    Manually trigger a notification with the provided payload
     
-    Args:
-        payload: The notification payload
-        
+@router.post("/trigger-stream-notification")
+async def trigger_stream_notification():
+    """
+    Trigger a notification with the current frame from the running stream
+    
     Returns:
-        Dictionary with the result
+        Dictionary with the result of the notification attempt
     """
     try:
-        # Send the notification
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                stream_manager.notification_manager.api_endpoint, 
-                json=payload.dict()
-            ) as response:
-                if response.status == 200:
-                    return {"status": "success", "message": "Notification sent successfully"}
-                else:
-                    return {"status": "error", "message": f"Failed to send notification: {response.status}"}
+        # Check if stream is active
+        if not stream_manager.active:
+            raise HTTPException(status_code=400, detail="Stream is not active")
+            
+        # Get the latest processed frame and detections from the stream manager
+        frame, detections = await stream_manager.get_latest_processed_frame()
+        
+        if frame is None:
+            raise HTTPException(status_code=404, detail="No frames available from stream")
+        
+        # Check if we have valid detections, otherwise use the latest stored detections
+        if not detections and stream_manager.latest_detections:
+            detections = stream_manager.latest_detections
+        
+        # Skip sending if no detections are available
+        # if not detections:
+        #     return {"status": "warning", "message": "No detections available to send"}
+        
+        # print("Detections:", detections)
+        
+        # Temporarily store the frame and detections in the notification manager
+        notification_manager = stream_manager.notification_manager
+        notification_manager.best_image = frame.copy()
+        notification_manager.best_detections = detections
+        
+        # Use the internal _send_notification method
+        # print("Sending notification")
+        success = await notification_manager._send_notification()
+        
+        if success:
+            return {"status": "success", "message": "Notification sent successfully"}
+        else:
+            return {"status": "error", "message": "Failed to send notification"}
+            
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error sending notification: {str(e)}")
-
-@router.post("/mock-notification")
-async def mock_notification(payload: NotificationPayload):
-    try:
-        # Decode the base64 image
-        image_bytes = base64.b64decode(payload.picture)
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        # Save the image with detection information
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"mock_notification_{timestamp}.jpg"
-        image_path = save_image(image, filename)
-        
-        # Log the detection information
-        print(f"Mock notification received:")
-        print(f"Image saved at: {image_path}")
-        print(f"Detections: {payload.detection_event}")
-        print(f"Location ID: {payload.location_id}")
-        print(f"Camera ID: {payload.camera_id}")
-        print(f"Timestamp: {payload.timestamp}")
-        
-        return {
-            "status": "success",
-            "message": "Mock notification processed successfully",
-            "image_path": image_path,
-            "detections": payload.detection_event
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing mock notification: {str(e)}")
