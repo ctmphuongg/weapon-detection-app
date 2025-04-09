@@ -1,6 +1,6 @@
 # Threat Detection System
 
-With school shootings on the rise, our client Critical Reach, a Silicon Valley non-profit, was looking to create a solution to reduce potential threats on school campuses by leveraging AI image recognition technology. This Threat Detection System has the capacity to save lives and is comprised of three components: a threat detection model, a UI, and a data curation tool. The threat detection model identifies five classes of objects: guns, rifles, lenses, wallets, and knives. The UI is simplistic in design as it displays the live camera feed that it is connected to, alerts when a weapon is detected, and the confidence level the algorithm has about the object detected. The data curation tool takes in a video file, slices the file into images, and outputs the images files into a folder.
+With school shootings on the rise, our client Critical Reach, a Silicon Valley non-profit, was looking to create a solution to reduce potential threats on school campuses by leveraging AI image recognition technology. This Threat Detection System has the capacity to save lives and is comprised of three components: a threat detection model, a UI, and a data curation tool. The threat detection model identifies five classes of objects: guns, rifles, lenses, wallets, and knives. The threat detection model also features the ability to distinguish people as a police officer or a non-police officer. The UI is simplistic in design as it displays the live camera feed that it is connected to, alerts when a weapon is detected, and the confidence level the algorithm has about the object detected. The data curation tool takes in a video file, slices the file into images, and outputs the images files into a folder.
 
 ## Install and Deploy
 
@@ -17,8 +17,8 @@ The following people listed are the authors of this project:
  - Connor Coles, Scrum Master
  - Ashley Albert, Developer
  - Derek Araki-Kurdyla, Developer
- -  Phuong Cao, Developer
- -  Sam Vickers, Developer
+ - Phuong Cao, Developer
+ - Sam Vickers, Developer
 
 ## Acknowledgement
 
