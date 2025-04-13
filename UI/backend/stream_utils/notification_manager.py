@@ -42,6 +42,7 @@ class NotificationManager:
         Returns:
             True if a notification was sent, False otherwise
         """
+        print("Get to process_detection")
         current_time = time.time()
         
         # Filter detections to only include weapons with confidence above threshold
@@ -52,6 +53,7 @@ class NotificationManager:
         
         if not weapon_detections:
             # No weapons detected with sufficient confidence
+            print("No weapon detected with sufficient confidence.")
             return False
         
         # Get the highest confidence detection
@@ -61,6 +63,8 @@ class NotificationManager:
         # Count unique weapon types
         weapon_types = set(d["class_name"] for d in weapon_detections)
         weapon_count = len(weapon_types)
+        
+        print(highest_conf_detection)
         
         # Check if we should start capturing the best image
         if not self.is_capturing_best_image and self._should_start_capture(
@@ -86,6 +90,7 @@ class NotificationManager:
             # If we've reached the end of the capture window, send the notification
             if elapsed_time >= self.best_image_window:
                 self.is_capturing_best_image = False
+                print("Sending notification")
                 await self._send_notification()
                 return True
         
@@ -191,11 +196,17 @@ class NotificationManager:
             form_data.add_field('cameraId', '1')
             form_data.add_field('timestamp', datetime.now().isoformat() + 'Z')
             
+            print("Best detections: ", self.best_detections)
             # Add detection events
             if self.best_detections:
                 for i, detection in enumerate(self.best_detections):
+                    print(detection["confidence"], detection["class_name"])
+                    i = str(i)
                     form_data.add_field(f'detectionEvent[{i}][confidence]', str(detection["confidence"]))
-                    form_data.add_field(f'detectionEvent[{i}][classification]', detection["class_name"])
+                    if (detection["class_name"] in set(["pistol"])): 
+                        form_data.add_field(f'detectionEvent[{i}][classification]', "gun")
+                    else:
+                        form_data.add_field(f'detectionEvent[{i}][classification]', detection["class_name"])
         
             # TODO: Test send notification - delete when done
             else: 

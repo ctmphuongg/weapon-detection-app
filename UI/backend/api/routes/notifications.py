@@ -7,10 +7,9 @@ import aiohttp
 from api.models import NotificationConfig, NotificationPayload
 from stream_utils import save_image, NotificationManager
 from config.settings import NOTIFICATION_ENDPOINT, NOTIFICATION_COOLDOWN
-from api.routes.stream import stream_manager
+from api.routes import stream_manager, notification_manager
 
 router = APIRouter()
-notification_manager = NotificationManager(NOTIFICATION_ENDPOINT)
 
 @router.post("/configure")
 async def configure_notifications(
@@ -97,7 +96,8 @@ async def trigger_stream_notification():
         notification_manager.best_image = frame.copy()
         notification_manager.best_detections = detections
         
-        # Use the internal _send_notification method
+        # Use the internal 
+        # otification method
         # print("Sending notification")
         success = await notification_manager._send_notification()
         

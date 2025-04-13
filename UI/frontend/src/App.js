@@ -17,7 +17,7 @@ function App() {
   const API_URL = 'http://localhost:8000';
   
   // Define dangerous classes to watch for
-  const DANGEROUS_CLASSES = ['gun', 'knife', 'pistol', 'rifle', 'weapon', 'suitcase'];
+  const DANGEROUS_CLASSES = ['gun', 'knife', 'pistol', 'rifle', 'weapon'];
 
   // Function to simulate a detection
   const simulateDetection = () => {
@@ -133,7 +133,7 @@ function App() {
           console.error('Failed to fetch detections:', error);
         }
       }
-    }, 5000); // Poll every second
+    }, 1000); // Poll every second
 
     // Clean up on component unmount
     return () => {

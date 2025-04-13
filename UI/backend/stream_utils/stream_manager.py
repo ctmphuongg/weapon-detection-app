@@ -94,6 +94,7 @@ class StreamManager:
                             frame.copy()
                         )
                         
+                        # print("Detections: ", detections)
                         if processed_frame is None:
                             logger.warning("Failed to process frame, retrying...")
                             await asyncio.sleep(0.1)
@@ -119,6 +120,7 @@ class StreamManager:
                                     'detections': detections
                                 })
                             
+                            print("Sent to process detection")
                             # Process detections for notification
                             await self.notification_manager.process_detection(frame, detections)
                         else:

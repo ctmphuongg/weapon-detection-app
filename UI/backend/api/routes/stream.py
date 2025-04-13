@@ -2,10 +2,9 @@ from fastapi import APIRouter, HTTPException
 from stream_utils import process_rtsp_frame, StreamManager
 from ultralytics import YOLO
 from config.settings import RTSP_URL, MODEL_PATH
+from api.routes import stream_manager, model 
 
 router = APIRouter()
-model = YOLO(MODEL_PATH)
-stream_manager = StreamManager(RTSP_URL, model)
 
 @router.get("/process-image")
 async def process_image(interval: int = 10):

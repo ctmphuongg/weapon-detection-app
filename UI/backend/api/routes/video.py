@@ -4,10 +4,9 @@ import asyncio
 from stream_utils import StreamManager
 from config.settings import RTSP_URL, MODEL_PATH
 from ultralytics import YOLO
+from api.routes import stream_manager, model 
 
 router = APIRouter()
-model = YOLO(MODEL_PATH)
-stream_manager = StreamManager(RTSP_URL, model)
 
 async def frame_generator():
     try:
@@ -41,5 +40,5 @@ async def video_feed():
 @router.get("/keep-alive")
 async def keep_alive(background_tasks: BackgroundTasks):
     stream_manager.keep_alive_counter = 100
-    await stream_manager.start_stream()
-    return {"status": "ok"} 
+    # await stream_manager.start_stream()
+    return {"status": "ok", "is_running": stream_manager.active} 
