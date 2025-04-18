@@ -1,0 +1,15 @@
+# Core dependencies
+torch>=1.9.0          # Required for YOLO model
+ultralytics>=8.3.27   # YOLO library for object detection
+opencv-python>=4.10.0 # OpenCV for image and video processing
+opencv-contrib-python>=4.9.0.80 # Additional OpenCV modules
+numpy>=1.21.0         # Numerical operations
+python-dotenv>=1.0.0  # For environment variable management
+
+# Optional dependencies for FastAPI backend (if needed)
+fastapi>=0.115.0      # FastAPI for backend API
+uvicorn>=0.34.0       # ASGI server for FastAPI
+imutils>=0.5.4        # Utility functions for image processing
+
+# Additional tools
+glob2>=0.7            # For advanced file pattern matching
