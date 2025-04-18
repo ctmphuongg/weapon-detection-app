@@ -1,98 +1,58 @@
-# import the necessary packages
-from imutils.video import VideoStream
-from dotenv import load_dotenv
-from fastapi import FastAPI, BackgroundTasks
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import threading
-import asyncio
-import imutils
-import time
-import cv2
 import uvicorn
-from multiprocessing import Process, Queue
-import subprocess
-import numpy as np
-import os
-from ultralytics import YOLO
-from yolo_process import process_frame_with_yolo
-from stream_manager import StreamManager
+import logging
+from api.routes import notifications, stream, video
+from config.settings import API_HOST, API_PORT
 
-# To think about: How to avoid 3s delay at the beginning when restart client
-HTTP_PORT = 6064
-lock = threading.Lock()
-app = FastAPI()
-width = 1280
-height = 720
-load_dotenv()
-url_rtsp = os.getenv("RTSP_URL")
-model = YOLO("best.pt")
 
-# Single shared stream manager instance
-stream_manager = StreamManager(url_rtsp, model)
+# Disable YOLO inference logs
+logging.getLogger('ultralytics').setLevel(logging.WARNING)
+
+# Initialize FastAPI app
+app = FastAPI(title="Weapon Detection API")
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-async def frame_generator():
-    try:
-        while stream_manager.active:
-            try:
-                # Use wait_for with timeout to make this cancellable
-                encoded_image = await asyncio.wait_for(
-                    stream_manager.frame_queue.get(), 
-                    timeout=5.0
-                )
-                yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
-                       bytearray(encoded_image) + b'\r\n')
-            except asyncio.TimeoutError:
-                # No frames available, but stream might still be active
-                if stream_manager.active:
-                    continue
-                break
-    except asyncio.CancelledError:
-        # Handle client disconnection gracefully
-        print("Stream cancelled")
-        raise
+# Include routers
+app.include_router(video.router, prefix="/video", tags=["Video Processing"])
+app.include_router(stream.router, prefix="/stream", tags=["Stream Management"])
+app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 
-@app.get("/")
-async def video_feed():
-    await stream_manager.start_stream()
-    return StreamingResponse(
-        frame_generator(), 
-        media_type="multipart/x-mixed-replace;boundary=frame"
-    )
-
-@app.get("/keep-alive")
-async def keep_alive(background_tasks: BackgroundTasks):
-    stream_manager.keep_alive_counter = 100
-    await stream_manager.start_stream()
-    return {"status": "ok"}
-
-# Get the list of classes that the model can detect
+# Root endpoint for model information
 @app.get("/model-info")
 def model_info():
-    return {"classes": model.names}
+    return {"classes": video.model.names}
 
-# New endpoint to get latest detections
+# Latest detections endpoint
 @app.get("/latest-detections")
 async def latest_detections():
-    return {"detections": stream_manager.latest_detections}
+    return {"detections": stream.stream_manager.latest_detections}
 
-# Shutdown hook
+# Startup event handler
+@app.on_event("startup")
+async def startup_event():
+    """
+    Start the stream automatically when the server starts
+    """
+    print("Starting stream on server startup...")
+    await stream.stream_manager.start_stream()
+    # Set a high keep-alive counter to keep the stream running
+    stream.stream_manager.keep_alive_counter = 1000000  # A very large number
+
+# Shutdown event handler
 @app.on_event("shutdown")
 async def shutdown_event():
-    stream_manager.active = False
-    if stream_manager.stream_task:
-        stream_manager.stream_task.cancel()
+    stream.stream_manager.active = False
+    if stream.stream_manager.stream_task:
+        stream.stream_manager.stream_task.cancel()
 
-# check to see if this is the main thread of execution
-if __name__ == '__main__':
-    # start app
-    uvicorn.run(app, host="0.0.0.0", port=HTTP_PORT, access_log=False)
+if __name__ == "__main__":
+    uvicorn.run(app, host=API_HOST, port=API_PORT)
