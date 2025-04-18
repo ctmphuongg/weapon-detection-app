@@ -36,7 +36,7 @@ class NotificationManager:
         Process a detection and determine if a notification should be sent
         
         Args:
-            frame: The current frame
+            frame: The current frame with bounding box
             detections: List of detections from YOLO
             
         Returns:
@@ -213,12 +213,21 @@ class NotificationManager:
                 form_data.add_field(f'detectionEvent[0][confidence]', '0.5')
                 form_data.add_field(f'detectionEvent[0][classification]', 'knife')
             
+            # TODO: Debug test image - delete when done
+            if self.best_image is not None:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                cv2.imwrite(f"debug_image_{timestamp}.jpg", self.best_image)
+                print(f"Saved debug image to debug_image_{timestamp}.jpg")
+                
             # Send the notification
             async with aiohttp.ClientSession() as session:
                 async with session.post(self.api_endpoint, data=form_data, headers=headers) as response:
-                    print(response.text)
+                    print(response)
                     
                     if response.status == 201:
+                        response_data = await response.json()
+                        print(response_data)
+                        
                         # Update state after successful notification
                         self.last_notification_time = time.time()
                         self.last_detection_category = self.best_detections[0]["class_name"] if self.best_detections else None

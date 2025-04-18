@@ -122,7 +122,7 @@ class StreamManager:
                             
                             print("Sent to process detection")
                             # Process detections for notification
-                            await self.notification_manager.process_detection(frame, detections)
+                            await self.notification_manager.process_detection(processed_frame, detections)
                         else:
                             # Check if detections have disappeared for too long
                             if self.last_detection_time and (current_time - self.last_detection_time) > self.detection_timeout:
