@@ -1,7 +1,5 @@
 # Senior Design
 
-....
-
 # Weapon Detection App
 
 A real-time weapon detection system that uses computer vision to detect weapons in video streams. The system consists of a FastAPI backend that processes RTSP video streams and a React frontend that displays the video feed and detection results.
@@ -39,13 +37,15 @@ A real-time weapon detection system that uses computer vision to detect weapons 
 5. The frontend displays the video feed and updates detection information
 
 ### Detection System
-1. Each frame is processed by the YOLO model
-2. Detected objects are filtered for weapons
-3. Detection results include:
+1. When the server starts, the video stream of the camera will run.
+2. Each frame is processed by the YOLO model
+3. Detected objects are filtered for weapons
+4. Detection results include:
    - Object class (weapon type)
    - Confidence score
    - Bounding box coordinates
-4. Results are sent to the frontend via a REST API endpoint
+5. Results are sent to the frontend via a REST API endpoint
+6. At the same time, if a dangerous object is detected, it will start confidence checks. If it's confident enough, server will sent request to Critical's Reach service to send notifications.
 
 ## Setup Instructions
 
@@ -71,9 +71,13 @@ A real-time weapon detection system that uses computer vision to detect weapons 
    pip install -r requirements.txt
    ```
 
-4. Create a `.env` file with your RTSP URL:
+4. Create a `.env` file with the information below:
    ```
    RTSP_URL=rtsp://your-camera-url
+   SAVE_MODE="local" 
+   LOCAL_SAVE_DIR="saved_images"
+   NOTIFICATION_ENDPOINT=https://your-notification-endpoint
+   TOKEN=YOUR-TOKEN
    ```
 
 5. Start the backend server:
@@ -84,7 +88,7 @@ A real-time weapon detection system that uses computer vision to detect weapons 
 ### Frontend Setup
 1. Navigate to the frontend directory:
    ```bash
-   cd frontend/weapon
+   cd frontend
    ```
 
 2. Install dependencies:
@@ -102,8 +106,18 @@ A real-time weapon detection system that uses computer vision to detect weapons 
 ## API Endpoints
 
 ### Backend
-- `GET /`: Main video stream endpoint (MJPEG)
-- `GET /keep-alive`: Keep the stream active
+Details of API endpoints can be accessed at `http://localhost:8000/docs`
+Video Processing: 
+- `GET /video/`: Main video stream endpoint (MJPEG)
+- `GET /video/keep-alive`: Keep the stream active
+Stream:
+- `GET/stream/process-image`: Save image with detections locally
+Notifications:
+- `POST/notifications/configure`: Configure confidence interval to send notification
+- `GET/notifications/configure`: Get the current configs
+- `POST/notifications/trigger-stream-notification`: Manually trigger sending notification for testing
+
+Default:
 - `GET /latest-detections`: Get the latest detection results
 - `GET /model-info`: Get information about the YOLO model classes
 
