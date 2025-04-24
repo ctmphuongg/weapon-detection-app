@@ -29,7 +29,7 @@ app.include_router(notifications.router, prefix="/notifications", tags=["Notific
 # Root endpoint for model information
 @app.get("/model-info")
 def model_info():
-    return {"classes": video.model.names}
+    return {"classes": stream.weapon_model.names}
 
 # Latest detections endpoint
 @app.get("/latest-detections")

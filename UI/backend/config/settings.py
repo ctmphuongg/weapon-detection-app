@@ -12,7 +12,9 @@ API_HOST = "0.0.0.0"
 API_PORT = 8000
 
 # Model Configuration
-MODEL_PATH = os.getenv("MODEL_PATH", "best.pt")
+BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "yolo11n.pt")
+POLICE_MODEL_PATH = os.getenv("POLICE_MODEL_PATH", "police.pt")
+WEAPON_MODEL_PATH = os.getenv("WEAPON_MODEL_PATH", "weapon.pt")
 
 # Notification Configuration
 NOTIFICATION_ENDPOINT = os.getenv("NOTIFICATION_ENDPOINT", "Unset")

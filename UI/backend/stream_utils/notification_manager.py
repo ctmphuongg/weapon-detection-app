@@ -203,9 +203,7 @@ class NotificationManager:
                     print(detection["confidence"], detection["class_name"])
                     i = str(i)
                     form_data.add_field(f'detectionEvent[{i}][confidence]', str(detection["confidence"]))
-                    if (detection["class_name"] in set(["pistol"])): 
-                        form_data.add_field(f'detectionEvent[{i}][classification]', "gun")
-                    else:
+                    if (detection["class_name"] in ["gun", "knife"]): 
                         form_data.add_field(f'detectionEvent[{i}][classification]', detection["class_name"])
         
             # TODO: Test send notification - delete when done

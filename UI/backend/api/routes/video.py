@@ -1,10 +1,8 @@
 from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import asyncio
-from stream_utils import StreamManager
-from config.settings import RTSP_URL, MODEL_PATH
 from ultralytics import YOLO
-from api.routes import stream_manager, model 
+from api.routes import stream_manager
 
 router = APIRouter()
 
