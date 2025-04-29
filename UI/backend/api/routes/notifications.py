@@ -96,8 +96,7 @@ async def trigger_stream_notification():
         notification_manager.best_image = frame.copy()
         notification_manager.best_detections = detections
         
-        # Use the internal 
-        # otification method
+        # Use the internal notification method
         # print("Sending notification")
         success = await notification_manager._send_notification()
         

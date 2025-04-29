@@ -20,10 +20,12 @@ load_dotenv()
 
 # Shared state management
 class StreamManager:
-    def __init__(self, url_rtsp, model):
+    def __init__(self, url_rtsp, base_model, police_model, weapon_model):
         self.active = False
         self.url_rtsp = url_rtsp
-        self.model = model
+        self.base_model = base_model
+        self.police_model = police_model
+        self.weapon_model = weapon_model
         self.frame_queue = asyncio.Queue(maxsize=1000)
         self.keep_alive_counter = 0
         self.stream_task = None
@@ -90,8 +92,13 @@ class StreamManager:
                         # Process with YOLO in thread pool executor
                         processed_frame, detections = await loop.run_in_executor(
                             None, 
-                            lambda f: process_frame_with_yolo(f, self.model, return_detections=True), 
-                            frame.copy()
+                            lambda f: process_frame_with_yolo(
+                                f,
+                                base_model=self.base_model, 
+                                weapon_model=self.weapon_model,
+                                police_model=self.police_model,
+                                return_detections=True), 
+                                frame.copy()
                         )
                         
                         # print("Detections: ", detections)

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from stream_utils import process_rtsp_frame, StreamManager
 from ultralytics import YOLO
-from config.settings import RTSP_URL, MODEL_PATH
-from api.routes import stream_manager, model 
+from config.settings import RTSP_URL
+from api.routes import stream_manager, weapon_model 
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ async def process_image(interval: int = 10):
     Returns:
         Dictionary with detection results and image path
     """
-    return await process_rtsp_frame(RTSP_URL, model, interval, stream_manager)
+    return await process_rtsp_frame(RTSP_URL, weapon_model, interval, stream_manager)
 
 # @router.get("/stream-status")
 # async def get_stream_status():
